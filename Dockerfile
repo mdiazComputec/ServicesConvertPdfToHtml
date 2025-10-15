@@ -26,6 +26,9 @@ RUN ./mvnw package -DskipTests
 # Usa una imagen más ligera solo con el JRE para ejecutar la aplicación
 FROM eclipse-temurin:17-jre-alpine
 
+# Instala el cliente de Docker para que la app pueda invocarlo
+RUN apk add --no-cache docker-cli
+
 # Establece el directorio de trabajo
 WORKDIR /app
 
