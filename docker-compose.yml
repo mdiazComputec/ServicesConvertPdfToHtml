@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     ports:
       # Mapea el puerto 8080 del host al 8080 del contenedor
-      - "8080:8080"
+      - "9999:8080"
     volumes:
       # ¡CRÍTICO! Monta el socket de Docker del host dentro del contenedor.
       # Esto permite que la aplicación Java pueda ejecutar comandos `docker run`.
