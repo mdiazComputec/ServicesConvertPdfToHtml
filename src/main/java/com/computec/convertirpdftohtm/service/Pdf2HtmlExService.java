@@ -131,7 +131,7 @@ public class Pdf2HtmlExService {
         cmd.add("--zoom"); cmd.add(zoom);
         cmd.add("--split-pages"); cmd.add("0");
         cmd.add("--embed"); cmd.add("cfijo");
-        cmd.add(pdf.getFileName().toString());
+        cmd.add(workDir.relativize(pdf).toString());
         cmd.add(outHtml.getFileName().toString());
 
         ProcessBuilder pb = new ProcessBuilder(cmd)
