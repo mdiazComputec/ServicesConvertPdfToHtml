@@ -3,7 +3,7 @@ version: '3.8'
 services:
   pdf-converter-service:
     # Construye la imagen usando el Dockerfile en el directorio actual
-    build:ew: .
+    build: .
     # Asigna un nombre a la imagen construida
     image: computec/pdf-converter-service:latest
     # Reinicia el contenedor si falla
