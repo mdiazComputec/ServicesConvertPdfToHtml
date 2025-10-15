@@ -123,6 +123,7 @@ public class Pdf2HtmlExService {
 
         List<String> cmd = new ArrayList<>();
         cmd.add(dockerBin); cmd.add("run"); cmd.add("--rm");
+        cmd.add("--user"); cmd.add("0"); // Ejecutar como root para evitar problemas de permisos
         cmd.add("-v"); cmd.add(mount);
         cmd.add("-w"); cmd.add("/work");
         cmd.add(pdf2htmlImage);
