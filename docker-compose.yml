@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  pdf-converter-service:
+    # Construye la imagen usando el Dockerfile en el directorio actual
+    build: .
+    # Asigna un nombre a la imagen construida
+    image: computec/pdf-converter-service:latest
+    # Reinicia el contenedor si falla
+    restart: unless-stopped
+    ports:
+      # Mapea el puerto 8080 del host al 8080 del contenedor
+      - "8080:8080"
+    volumes:
+      # ¡CRÍTICO! Monta el socket de Docker del host dentro del contenedor.
+      # Esto permite que la aplicación Java pueda ejecutar comandos `docker run`.
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # Puedes sobreescribir las propiedades de la aplicación aquí.
+      # Spring Boot convierte automáticamente las variables de entorno.
+      # Por ejemplo, SERVER_PORT se mapea a server.port
+      - SERVER_PORT=8080
+      - SPRING_SERVLET_MULTIPART_MAX-FILE-SIZE=100MB
+      - SPRING_SERVLET_MULTIPART_MAX-REQUEST-SIZE=100MB
+      - CONVERTER_PDF2HTMLEX_ZOOM=1.3
+      - CONVERTER_OCR_ENABLED=true
