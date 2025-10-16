@@ -21,61 +21,55 @@ import org.springframework.stereotype.Service;
 @Service
 public class Pdf2HtmlExService {
 
-	@Value("${converter.docker.bin:docker}")
+	@Value("${converter.docker.bin}")
     private String dockerBin;
 
-	@Value("${converter.docker.image.ocr:jbarlow83/ocrmypdf-alpine:latest}")
+	@Value("${converter.docker.image.ocr}")
 	private String ocrImage;
     
-	@Value("${converter.docker.image.pdf2htmlex:pdf2htmlex/pdf2htmlex:0.18.8.rc1-master-20200630-Ubuntu-focal-x86_64}")
+	@Value("${converter.docker.image.pdf2htmlex}")
 	private String pdf2htmlImage;
 
-    @Value("${converter.pdf2htmlex.zoom:1.3}")
+    @Value("${converter.pdf2htmlex.zoom}")
     private String zoom;
 
-    @Value("${converter.ocr.enabled:true}")
+    @Value("${converter.ocr.enabled}")
     private boolean ocrEnabled;
 
-    @Value("${converter.ocr.lang:spa+eng}")
+    @Value("${converter.ocr.lang}")
     private String ocrLang;
 
-    @Value("${converter.ocr.force:true}")
+    @Value("${converter.ocr.force}")
     private boolean ocrForce;
 
     /** Versión extendida: permite pasar zoom/ocr/lang por request */
     public byte[] convertViaDocker(byte[] pdfBytes, Float zoomOverride, Boolean ocrOverride, String langOverride) throws Exception {
         Path work = Files.createTempDirectory("p2h-");
-        Path inputPdf = work.resolve("input.pdf");
-        Path htmlOut  = work.resolve("output.html");
-        Files.write(inputPdf, pdfBytes);
-
-        String prevZoom = this.zoom;
-        boolean prevOcr = this.ocrEnabled;
-        String  prevLang = this.ocrLang;
-
-        if (zoomOverride != null) this.zoom = Float.toString(zoomOverride);
-        if (ocrOverride != null)  this.ocrEnabled = ocrOverride;
-        if (langOverride != null && !langOverride.isBlank()) this.ocrLang = langOverride;
-
         try {
+            Path inputPdf = work.resolve("input.pdf");
+            Path htmlOut  = work.resolve("output.html");
+            Files.write(inputPdf, pdfBytes);
+
+            // Determina la configuración efectiva para esta petición sin modificar el estado del servicio.
+            final String effectiveZoom = (zoomOverride != null) ? Float.toString(zoomOverride) : this.zoom;
+            final boolean effectiveOcrEnabled = (ocrOverride != null) ? ocrOverride : this.ocrEnabled;
+            final String effectiveOcrLang = (langOverride != null && !langOverride.isBlank()) ? langOverride : this.ocrLang;
+
             // 1) OCR (si está habilitado)
             Path pdfForHtml = inputPdf;
-            if (ocrEnabled) {
-                pdfForHtml = runOcrMyPdfViaDocker(work, inputPdf, ocrLang, ocrForce);
+            if (effectiveOcrEnabled) {
+                pdfForHtml = runOcrMyPdfViaDocker(work, inputPdf, effectiveOcrLang, ocrForce);
             }
 
             // 2) Convertir a HTML
-            runPdf2HtmlExViaDocker(pdfForHtml, htmlOut, work);
+            runPdf2HtmlExViaDocker(pdfForHtml, htmlOut, work, effectiveZoom);
 
             // 3) Zipear TODO (salvo input original si quieres excluirlo)
             Files.deleteIfExists(inputPdf); // opcional
-            byte[] zip = zipDirectory(work);
-            return zip;
+            return zipDirectory(work);
+
         } finally {
-            // restaurar props y limpiar
-            this.zoom = prevZoom;
-            this.ocrEnabled = prevOcr;
-            this.ocrLang = prevLang;
+            // Limpiar el directorio temporal
             deleteRecursive(work);
         }
     }
@@ -118,7 +112,7 @@ public class Pdf2HtmlExService {
         return ocrPdf;
     }
 
-    private void runPdf2HtmlExViaDocker(Path pdf, Path outHtml, Path workDir) throws Exception {
+    private void runPdf2HtmlExViaDocker(Path pdf, Path outHtml, Path workDir, String zoomValue) throws Exception {
         String mount = workDir.toAbsolutePath().toString() + ":/work";
 
         List<String> cmd = new ArrayList<>();
@@ -129,11 +123,11 @@ public class Pdf2HtmlExService {
         cmd.add(pdf2htmlImage);
         // No agregues "pdf2htmlEX": es el ENTRYPOINT de la imagen
 
-        cmd.add("--zoom"); cmd.add(zoom);
+        cmd.add("--zoom"); cmd.add(zoomValue);
         cmd.add("--split-pages"); cmd.add("0");
-        cmd.add("--embed-css"); cmd.add("1");
-        cmd.add("--embed-font"); cmd.add("1");
-        cmd.add("--embed-image"); cmd.add("1");
+        cmd.add("--embed-css"); cmd.add("0");
+        cmd.add("--embed-font"); cmd.add("0");
+        cmd.add("--embed-image"); cmd.add("0");
         cmd.add("--fallback"); cmd.add("1"); // Parámetro de estabilidad
         cmd.add("--process-outline"); cmd.add("0"); // Parámetro de estabilidad
         cmd.add(workDir.relativize(pdf).toString());
