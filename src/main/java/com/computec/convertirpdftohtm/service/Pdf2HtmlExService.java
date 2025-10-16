@@ -130,6 +130,12 @@ public class Pdf2HtmlExService {
         // No agregues "pdf2htmlEX": es el ENTRYPOINT de la imagen
 
         cmd.add("--zoom"); cmd.add(zoom);
+        cmd.add("--split-pages"); cmd.add("0");
+        cmd.add("--embed-css"); cmd.add("1");
+        cmd.add("--embed-font"); cmd.add("1");
+        cmd.add("--embed-image"); cmd.add("1");
+        cmd.add("--fallback"); cmd.add("1"); // Parámetro de estabilidad
+        cmd.add("--process-outline"); cmd.add("0"); // Parámetro de estabilidad
         cmd.add(workDir.relativize(pdf).toString());
         cmd.add(outHtml.getFileName().toString());
 
